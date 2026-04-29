@@ -153,6 +153,74 @@ function setupSubmenu(navSection) {
 }
 
 /**
+ * Builds and renders the language switcher in nav-tools
+ * Switches between English (default, no prefix) and Spanish (/es/)
+ * @param {Element} navTools - the nav-tools element
+ */
+function renderLanguageSwitcher(navTools) {
+  // Supported locales — key is URL prefix, value is display label
+  const locales = [
+    { prefix: '', label: 'EN', lang: 'en' },
+    { prefix: '/es', label: 'ES', lang: 'es' },
+  ];
+
+  // Detect current locale from pathname
+  const { pathname } = window.location;
+  const currentLocale = pathname.startsWith('/es') ? '/es' : '';
+
+  // Build switcher wrapper
+  const switcher = document.createElement('div');
+  switcher.classList.add('language-switcher', 'nav-tools-wrapper');
+
+  // Build button for each locale
+  locales.forEach(({ prefix, label, lang }) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.classList.add('language-switcher-btn');
+    button.textContent = label;
+    button.setAttribute('lang', lang);
+    button.setAttribute('aria-label', `Switch to ${label}`);
+
+    if (prefix === currentLocale) {
+      button.classList.add('active');
+      button.setAttribute('aria-current', 'true');
+    }
+
+    button.addEventListener('click', () => {
+      if (prefix === currentLocale) return; // already on this locale
+
+      // Build the target URL by swapping the locale prefix
+      let newPath;
+      if (prefix === '') {
+        // Switching TO English — remove /es prefix
+        newPath = pathname.replace(/^\/es/, '') || '/';
+      } else {
+        // Switching TO Spanish — add /es prefix
+        newPath = `${prefix}${pathname}`;
+      }
+
+      // Preserve query string and hash
+      newPath = `${newPath}${window.location.search}${window.location.hash}`;
+
+      // Store preference in cookie for future visits
+      document.cookie = `locale=${prefix || 'en'};path=/;max-age=31536000`;
+
+      window.location.href = newPath;
+    });
+
+    switcher.appendChild(button);
+  });
+
+  // Insert before search wrapper
+  const searchWrapper = navTools.querySelector('.search-wrapper');
+  if (searchWrapper) {
+    navTools.insertBefore(switcher, searchWrapper);
+  } else {
+    navTools.appendChild(switcher);
+  }
+}
+
+/**
  * loads and decorates the header, mainly the nav
  * @param {Element} block The header block element
  */
@@ -519,6 +587,8 @@ export default async function decorate(block) {
   // prevent mobile nav behavior on window resize
   toggleMenu(nav, navSections, isDesktop.matches);
   isDesktop.addEventListener('change', () => toggleMenu(nav, navSections, isDesktop.matches));
+
+  renderLanguageSwitcher(navTools);
 
   renderAuthCombine(
     navSections,

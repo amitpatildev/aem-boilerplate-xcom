@@ -126,6 +126,33 @@ async function loadEager(doc) {
 }
 
 /**
+ * Add hreflang tags for multi-language SEO
+ */
+function addHreflangTags() {
+  const { pathname, origin } = window.location;
+  const isSpanish = pathname.startsWith('/es');
+
+  const enPath = isSpanish ? pathname.replace(/^\/es/, '') || '/' : pathname;
+  const esPath = isSpanish ? pathname : `/es${pathname}`;
+
+  const hreflangs = [
+    { hreflang: 'en', href: `${origin}${enPath}` },
+    { hreflang: 'es', href: `${origin}${esPath}` },
+    { hreflang: 'x-default', href: `${origin}${enPath}` },
+  ];
+
+  hreflangs.forEach(({ hreflang, href }) => {
+    const link = document.createElement('link');
+    link.rel = 'alternate';
+    link.hreflang = hreflang;
+    link.href = href;
+    document.head.appendChild(link);
+  });
+}
+
+addHreflangTags();
+
+/**
  * Loads everything that doesn't need to be delayed.
  * @param {Element} doc The container element
  */
